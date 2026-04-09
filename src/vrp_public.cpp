@@ -17,12 +17,12 @@
 
 #include "vrp_public.h"
 
-#include <QCoroNetworkReply>
 #include <QCoroSignal>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QNetworkReply>
-#include <QNetworkRequest>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
 
 VrpPublic::VrpPublic(QObject *parent)
     : QObject(parent)
@@ -34,39 +34,36 @@ VrpPublic::VrpPublic(QObject *parent)
 
 QCoro::Task<bool> VrpPublic::update()
 {
-    static const QVector<QString> urls = {"https://vrpirates.wiki/downloads/vrp-public.json"};
+    // Resolving ~/.config/qrookie/vrp-public.json
+    QString filePath = QDir::homePath() + "/.config/qrookie/vrp-public.json";
+    
+    qDebug() << "Reading vrp-public.json from " << filePath;
 
-    for (auto url : urls) {
-        qDebug() << "Downloading vrp-public.json from " << url;
-        auto [success, data] = co_await downloadJson(url);
-        if (!success) {
-            continue;
-        }
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Could not open file for reading:" << filePath;
+        co_return false;
+    }
 
-        auto [base_url, password] = parseJson(data);
-        if (!base_url.isEmpty() && !password.isEmpty()) {
-            base_url_ = base_url;
-            password_ = password;
-            co_return true;
-        }
+    QByteArray data = file.readAll();
+    file.close();
+
+    auto [base_url, password] = parseJson(data);
+    if (!base_url.isEmpty() && !password.isEmpty()) {
+        base_url_ = base_url;
+        password_ = password;
+        co_return true;
     }
 
     co_return false;
 }
 
+// downloadJson is no longer needed for local file access, 
+// but kept here for structural compatibility if your header requires it.
 QCoro::Task<QPair<bool, QByteArray>> VrpPublic::downloadJson(const QString url)
 {
-    QNetworkRequest request(url);
-    auto *reply = manager_.get(request);
-    co_await qCoro(reply, &QNetworkReply::finished);
-
-    if (reply->error() != QNetworkReply::NoError) {
-        qDebug() << "Downloading json Error: " << reply->errorString();
-        co_return QPair<bool, QByteArray>(false, QByteArray());
-    }
-    auto data = reply->readAll();
-    delete reply;
-    co_return QPair<bool, QByteArray>(true, data);
+    // This function is effectively deprecated by the local file logic in update()
+    co_return QPair<bool, QByteArray>(false, QByteArray());
 }
 
 QPair<QString, QString> VrpPublic::parseJson(const QByteArray &json)
@@ -74,7 +71,6 @@ QPair<QString, QString> VrpPublic::parseJson(const QByteArray &json)
     QJsonDocument doc = QJsonDocument::fromJson(json);
     if (doc.isNull()) {
         qDebug() << "Parsing vrp-public.json Error: invalid json: " << json;
-
         return QPair<QString, QString>("", "");
     }
 
