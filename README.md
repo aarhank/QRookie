@@ -1,3 +1,42 @@
+# temp custom mirror change
+create file vrp-public.json in this location
+```
+~/.config/qrookie/vrp-public.json 
+```
+add this json in file with correct values 
+```
+{
+  "baseUri":"",
+  "password":""
+}
+```
+
+after build and install normally 
+### Install Dependencies
+```shell
+sudo pacman -S gcc cmake qt6-base qt6-declarative qcoro-qt6 kirigami extra-cmake-modules qqc2-breeze-style xdg-utils p7zip android-tools 
+```
+Some packages need to be downloaded from AUR
+```shell
+paru -S android-sdk-build-tools android-apktool
+```
+
+### Build
+```shell
+# build
+cmake -B build -S . -DCMAKE_BUILD_TYPE='Release' -DCMAKE_INSTALL_PREFIX='/usr'
+cmake --build build --target QRookie
+
+# run
+./build/QRookie
+
+# install (not recommended)
+cmake --install build
+```
+
+
+
+
 # ![](./icons/64x64/io.github.glaumar.QRookie.png) QRookie 
 Download and install Quest games from ROOKIE Public Mirror (like [VRP Rookie Sideloader](https://github.com/VRPirates/rookie) but for Linux and MacOS).
 
