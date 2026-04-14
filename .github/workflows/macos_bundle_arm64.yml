@@ -1,8 +1,9 @@
 name: Create MacOS Bundle (arm64)
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -22,7 +23,7 @@ jobs:
     - name: Install Homebrew deps
       run: |
         brew update
-        brew install cmake qt qcoro7 kirigami extra-cmake-modules p7zip
+        brew install cmake qt qcoro6 kirigami extra-cmake-modules p7zip
 
     - name: Install additional tools
       run: |
