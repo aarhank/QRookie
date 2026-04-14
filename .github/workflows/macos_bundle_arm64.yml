@@ -1,11 +1,8 @@
-name: Create MacOS Bundle(arm64)
+name: Create MacOS Bundle (arm64)
 
 on:
   release:
     types: [published]
-  push:
-    branches:
-      - branch_inexistente
 
 permissions:
   contents: write
@@ -16,23 +13,43 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with: 
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
         lfs: true
+        submodules: recursive
 
-    - name: Install Homebrew
+    - name: Install Homebrew deps
       run: |
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
-    - name: Build
-      run: |
-        cd macOs/
-        ./signApp.sh
+        brew update
+        brew install cmake qt qcoro7 kirigami extra-cmake-modules p7zip
 
-    - name: Upload binaries to release
+    - name: Install additional tools
+      run: |
+        brew install --cask android-commandlinetools || true
+        brew install android-platform-tools || true
+        brew install openjdk || true
+
+    - name: Set Qt env
+      run: |
+        echo "Qt path:"
+        brew --prefix qt
+        export CMAKE_PREFIX_PATH="$(brew --prefix qt)"
+
+    - name: Build MacOS app (official script)
+      run: |
+        cd macOs
+        chmod +x buildMacOs.sh
+        ./buildMacOs.sh --open
+
+    - name: Find DMG
+      run: |
+        find macOs -name "*.dmg"
+
+    - name: Upload Release Asset
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: macOs/QRookie_${{ github.event.release.tag_name }}_arm64.dmg
-        asset_name:  QRookie_${{ github.event.release.tag_name }}_arm64.dmg 
-        tag: ${{ github.ref }}
+        file: macOs/*.dmg
+        tag: ${{ github.event.release.tag_name }}
+        overwrite: true
