@@ -23,7 +23,7 @@ jobs:
     - name: Install Homebrew deps
       run: |
         brew update
-        brew install cmake qt qcoro6 kirigami extra-cmake-modules p7zip
+        brew install cmake qt qcoro6 extra-cmake-modules p7zip
 
     - name: Install additional tools
       run: |
