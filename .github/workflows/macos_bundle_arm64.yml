@@ -1,4 +1,4 @@
-name: Create MacOS Bundle (arm64)
+name: Build MacOS (arm64)
 
 on:
   push:
@@ -7,50 +7,38 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout
       uses: actions/checkout@v4
       with:
-        lfs: true
         submodules: recursive
+        lfs: true
 
-    - name: Install Homebrew deps
+    - name: Install dependencies
       run: |
         brew update
         brew install cmake qt qcoro6 extra-cmake-modules p7zip
 
-    - name: Install additional tools
+    - name: Set Qt environment
       run: |
-        brew install --cask android-commandlinetools || true
-        brew install android-platform-tools || true
-        brew install openjdk || true
-
-    - name: Set Qt env
-      run: |
-        echo "Qt path:"
-        brew --prefix qt
+        echo "Qt prefix: $(brew --prefix qt)"
         export CMAKE_PREFIX_PATH="$(brew --prefix qt)"
 
-    - name: Build MacOS app (official script)
+    - name: Build project
       run: |
         cd macOs
         chmod +x buildMacOs.sh
-        ./buildMacOs.sh --open
+        ./buildMacOs.sh
 
-    - name: Find DMG
-      run: |
-        find macOs -name "*.dmg"
-
-    - name: Upload Release Asset
+    - name: Upload DMG
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: macOs/*.dmg
-        tag: ${{ github.event.release.tag_name }}
+        file: macOs/build_*/QRookie*.dmg
+        tag: ${{ github.ref_name }}
         overwrite: true
